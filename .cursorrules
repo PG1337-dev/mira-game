@@ -5,9 +5,9 @@ This is a 2D arcade labyrinth game built for a 7-year-old child. The game featur
 
 ## Tech Stack
 - React 18 with Vite
-- React-Konva for 2D canvas rendering
-- Vanilla CSS for styling (no CSS-in-JS)
-- JavaScript (can migrate to TypeScript if needed)
+- TypeScript for type safety
+- styled-components for CSS-in-JS styling
+- SVG-based graphics for character rendering
 
 ## Code Style & Conventions
 
@@ -19,34 +19,44 @@ This is a 2D arcade labyrinth game built for a 7-year-old child. The game featur
 
 ### React Components
 - Use functional components with hooks
-- Keep components in separate files
-- Props should be documented with comments
-- Use PropTypes or TypeScript for type checking
+- Keep components in separate files (.tsx extension)
+- Props should be typed with TypeScript interfaces
+- Use styled-components for component styling
 - Component file structure:
-  ```jsx
-  import statements
+  ```tsx
+  import styled from 'styled-components'
+  import { ComponentProps } from '../types'
   
-  // Component logic
-  function ComponentName({ props }) {
+  const StyledContainer = styled.div`
+    // styles
+  `
+  
+  interface Props {
+    // prop types
+  }
+  
+  function ComponentName({ props }: Props) {
     // hooks
     // handlers
     // render
   }
   
-  export default ComponentName;
+  export default ComponentName
   ```
 
 ### File Organization
-- Components go in `src/components/`
-- Game logic goes in `src/game-logic/`
-- Styles go in `src/styles/`
+- Components go in `src/components/` (`.tsx` files)
+- Game logic goes in `src/game-logic/` (`.ts` files)
+- Styles go in `src/styles/` (theme, GlobalStyles as `.ts` files)
+- Type definitions go in `src/types/` (`.types.ts` files)
 - Assets go in `public/assets/`
 - Each major feature should have its own file
 
 ### Naming Conventions
-- Components: PascalCase (e.g., `WelcomeScreen.jsx`)
-- Utility functions: camelCase (e.g., `generateLabyrinth.js`)
-- CSS classes: kebab-case (e.g., `.game-board`)
+- Components: PascalCase (e.g., `WelcomeScreen.tsx`)
+- Utility functions: camelCase (e.g., `generateLabyrinth.ts`)
+- Styled components: PascalCase (e.g., `StyledContainer`)
+- Interfaces/Types: PascalCase (e.g., `GameState`, `Position`)
 - Constants: UPPER_SNAKE_CASE (e.g., `MAX_LEVEL`)
 
 ### State Management
@@ -62,6 +72,8 @@ This is a 2D arcade labyrinth game built for a 7-year-old child. The game featur
 - Game state transitions should be clear and explicit
 
 ### Styling
+- Use styled-components for all styling
+- Access theme colors via `props.theme.colors.*`
 - Use the Blade Runner color scheme consistently:
   - Background: `#0a0a0a`
   - Neon Cyan: `#00f0ff`
@@ -70,8 +82,8 @@ This is a 2D arcade labyrinth game built for a 7-year-old child. The game featur
   - Walls: `#1a1a2e`
   - Paths: `#16213e`
 - Mobile-responsive design
-- Use CSS custom properties for theme colors
-- Keep styles modular and component-specific when needed
+- Use keyframes for animations
+- Keep styled components colocated with their React components
 
 ### Performance
 - Optimize canvas rendering (use React-Konva efficiently)
@@ -104,19 +116,21 @@ This is a 2D arcade labyrinth game built for a 7-year-old child. The game featur
 - Format: `feat:`, `fix:`, `refactor:`, `style:`, `docs:`
 
 ## Current Development Phase
-- Phase 1: Basic setup and core mechanics
+- Phase 1: ✅ Complete - Basic setup and core mechanics
   - Welcome screen with name input
-  - Simple labyrinth rendering
-  - Hero as CSS square
+  - Labyrinth rendering with TypeScript
+  - Anime-style girl hero (SVG)
   - Arrow key controls
   - Timer and win condition
-  - Win modal
+  - Letter collection mechanic
+  - Win modal with stats
 
 ## Future Considerations
-- Phase 2: Enhanced graphics (sprite images, animations)
-- Phase 3: Multiple levels and progression
-- Phase 4: Sound effects and music
-- Phase 5: Additional features (power-ups, obstacles)
+- Phase 2: Enhanced animations (walk cycle, collecting effects)
+- Phase 3: Multiple levels and difficulty progression
+- Phase 4: Sound effects and background music
+- Phase 5: Additional features (power-ups, obstacles, character customization)
+- Phase 6: Mobile support with touch controls
 
 ## Testing
 - Test keyboard controls thoroughly
