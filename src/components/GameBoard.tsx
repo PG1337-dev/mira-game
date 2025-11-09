@@ -17,6 +17,7 @@ import {
   moveEnemy
 } from '../game-logic/heroController'
 import { getLevelConfig, MAX_LEVEL } from '../game-logic/levelConfig'
+import { soundSystem } from '../game-logic/soundSystem'
 import { Labyrinth as LabyrinthType, Letter, Enemy } from '../types/game.types'
 
 const BoardContainer = styled.div`
@@ -62,11 +63,44 @@ const PlayerName = styled.span`
   text-shadow: 0 0 10px ${props => props.theme.colors.neonCyan};
 `
 
+const MiddleSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+`
+
 const LevelBadge = styled.div`
   font-size: 24px;
   font-weight: bold;
   color: ${props => props.theme.colors.neonMagenta};
   text-shadow: ${props => props.theme.shadows.neonMagenta};
+`
+
+const MusicButton = styled.button<{ isPlaying: boolean }>`
+  padding: 8px 16px;
+  font-size: 24px;
+  background: ${props => props.isPlaying 
+    ? `linear-gradient(135deg, ${props.theme.colors.neonCyan}, ${props.theme.colors.neonMagenta})`
+    : 'rgba(26, 26, 46, 0.8)'};
+  border: 2px solid ${props => props.isPlaying ? props.theme.colors.neonCyan : props.theme.colors.textSecondary};
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
 `
 
 const LettersProgress = styled.div`
@@ -150,8 +184,19 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
   const [showCelebration, setShowCelebration] = useState(false)
   const [hasSeenCelebration, setHasSeenCelebration] = useState(false)
   const [isRespawning, setIsRespawning] = useState(false)
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false)
   
   const enemyIntervalRef = useRef<number | null>(null)
+
+  // Start music when component mounts
+  useEffect(() => {
+    soundSystem.startBackgroundMusic()
+    setIsMusicPlaying(true)
+    
+    return () => {
+      soundSystem.stopBackgroundMusic()
+    }
+  }, [])
 
   // Enemy movement logic
   useEffect(() => {
@@ -196,6 +241,7 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
   const handleDragonCaught = () => {
     setIsRespawning(true)
     setIsGameActive(false)
+    soundSystem.playDragonCatchSound()
     
     // Flash effect or animation here could be added
     setTimeout(() => {
@@ -203,6 +249,11 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
       setIsRespawning(false)
       setIsGameActive(true)
     }, 500)
+  }
+
+  const toggleMusic = () => {
+    const muted = soundSystem.toggleMute()
+    setIsMusicPlaying(!muted)
   }
 
   // Handle keyboard controls
@@ -220,6 +271,7 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
         // Check if player collected a letter
         const collectedLetter = checkLetterCollection(newPosition, letters)
         if (collectedLetter) {
+          soundSystem.playCollectSound()
           setLetters(prevLetters => {
             const updatedLetters = prevLetters.map(l => 
               l.x === collectedLetter.x && l.y === collectedLetter.y 
@@ -230,6 +282,7 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
             // Check if this was the last letter
             const allCollected = updatedLetters.every(l => l.collected)
             if (allCollected && !hasSeenCelebration) {
+              soundSystem.playCelebrationSound()
               setShowCelebration(true)
               setIsGameActive(false) // Pause the game
             }
@@ -240,6 +293,7 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
         
         // Check if player reached the finish with all letters collected
         if (checkWin(newPosition, labyrinth.finish, letters)) {
+          soundSystem.playWinSound()
           setHasWon(true)
           setIsGameActive(false)
         }
@@ -335,7 +389,16 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
             </LetterDisplay>
           </LettersProgress>
         </PlayerInfo>
-        <LevelBadge>LEVEL {currentLevel}</LevelBadge>
+        <MiddleSection>
+          <LevelBadge>LEVEL {currentLevel}</LevelBadge>
+          <MusicButton 
+            onClick={toggleMusic} 
+            isPlaying={isMusicPlaying}
+            title={isMusicPlaying ? "Mute Music" : "Play Music"}
+          >
+            {isMusicPlaying ? '🎵' : '🔇'}
+          </MusicButton>
+        </MiddleSection>
         <Timer isActive={isGameActive && !isRespawning} onTimeUpdate={handleTimerUpdate} />
       </Header>
 
