@@ -88,7 +88,7 @@ export function isInSafeRoom(position: Position, safeRooms: SafeRoom[]): boolean
   )
 }
 
-export function moveEnemy(enemy: Enemy, maze: number[][], safeRooms: SafeRoom[]): Enemy {
+export function moveEnemy(enemy: Enemy, maze: number[][]): Enemy {
   const directions: { [key: string]: { dx: number; dy: number } } = {
     up: { dx: 0, dy: -1 },
     down: { dx: 0, dy: 1 },
@@ -100,15 +100,15 @@ export function moveEnemy(enemy: Enemy, maze: number[][], safeRooms: SafeRoom[])
   let newX = enemy.x + currentDir.dx
   let newY = enemy.y + currentDir.dy
 
-  // Check if new position is valid (not wall, not safe room)
-  if (!isValidEnemyMove(newX, newY, maze, safeRooms)) {
+  // Check if new position is valid (not wall)
+  if (!isValidEnemyMove(newX, newY, maze)) {
     // If blocked, try random direction
     const possibleDirections: ('up' | 'down' | 'left' | 'right')[] = []
     
     for (const dir of Object.keys(directions) as ('up' | 'down' | 'left' | 'right')[]) {
       const testX = enemy.x + directions[dir].dx
       const testY = enemy.y + directions[dir].dy
-      if (isValidEnemyMove(testX, testY, maze, safeRooms)) {
+      if (isValidEnemyMove(testX, testY, maze)) {
         possibleDirections.push(dir)
       }
     }
@@ -142,7 +142,7 @@ export function moveEnemy(enemy: Enemy, maze: number[][], safeRooms: SafeRoom[])
   }
 }
 
-function isValidEnemyMove(x: number, y: number, maze: number[][], safeRooms: SafeRoom[]): boolean {
+function isValidEnemyMove(x: number, y: number, maze: number[][]): boolean {
   const height = maze.length
   const width = maze[0].length
 
@@ -156,11 +156,44 @@ function isValidEnemyMove(x: number, y: number, maze: number[][], safeRooms: Saf
     return false
   }
 
-  // Check if it's a safe room (enemies can't enter)
-  if (safeRooms.some(room => room.x === x && room.y === y)) {
-    return false
-  }
+  // Dragons CAN move through safe rooms now!
+  // (but can't harm hero if hero is in safe room)
 
   return true
+}
+
+export function moveUnicorn(
+  unicorn: Position,
+  maze: number[][],
+  safeRooms: SafeRoom[],
+  heroPosition: Position
+): Position {
+  // Unicorn moves slowly and randomly
+  const directions = [
+    { dx: 0, dy: -1 }, // up
+    { dx: 0, dy: 1 },  // down
+    { dx: -1, dy: 0 }, // left
+    { dx: 1, dy: 0 },  // right
+  ]
+  
+  // Shuffle directions for random movement
+  const shuffled = [...directions].sort(() => Math.random() - 0.5)
+  
+  for (const dir of shuffled) {
+    const newX = unicorn.x + dir.dx
+    const newY = unicorn.y + dir.dy
+    
+    // Check if valid position (not wall, not safe room, not too close to hero)
+    if (newY >= 0 && newY < maze.length && 
+        newX >= 0 && newX < maze[0].length && 
+        maze[newY][newX] === 0 &&
+        !safeRooms.some(room => room.x === newX && room.y === newY) &&
+        !(newX === heroPosition.x && newY === heroPosition.y)) {
+      return { x: newX, y: newY }
+    }
+  }
+  
+  // Can't move, stay in place
+  return unicorn
 }
 

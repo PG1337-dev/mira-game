@@ -16,11 +16,12 @@ import {
   canFinish,
   checkDragonCollision,
   isInSafeRoom,
-  moveEnemy
+  moveEnemy,
+  moveUnicorn
 } from '../game-logic/heroController'
 import { getLevelConfig, MAX_LEVEL } from '../game-logic/levelConfig'
 import { soundSystem } from '../game-logic/soundSystem'
-import { Labyrinth as LabyrinthType, Letter, Enemy, Position } from '../types/game.types'
+import { Labyrinth as LabyrinthType, Letter, Enemy, Position, Unicorn as UnicornType } from '../types/game.types'
 
 const BoardContainer = styled.div`
   width: 100%;
@@ -183,6 +184,7 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
   const [completionTime, setCompletionTime] = useState(0)
   const [letters, setLetters] = useState<Letter[]>(labyrinth.letters)
   const [enemies, setEnemies] = useState<Enemy[]>(labyrinth.enemies)
+  const [unicorn, setUnicorn] = useState<UnicornType | null>(labyrinth.unicorn)
   const [showCelebration, setShowCelebration] = useState(false)
   const [isRespawning, setIsRespawning] = useState(false)
   const [isMusicPlaying, setIsMusicPlaying] = useState(false)
@@ -214,7 +216,7 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
     enemyIntervalRef.current = setInterval(() => {
       setEnemies(prevEnemies => 
         prevEnemies.map(enemy => 
-          moveEnemy(enemy, labyrinth.maze, labyrinth.safeRooms)
+          moveEnemy(enemy, labyrinth.maze)
         )
       )
     }, levelConfig.enemySpeed)
@@ -226,17 +228,31 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
     }
   }, [isGameActive, enemies.length, labyrinth.maze, labyrinth.safeRooms, levelConfig.enemySpeed, isRespawning])
 
+  // Unicorn movement (slower than dragons, moves every 800ms)
+  useEffect(() => {
+    if (!isGameActive || !unicorn || isRespawning) return
+
+    const unicornInterval = setInterval(() => {
+      setUnicorn(prevUnicorn => {
+        if (!prevUnicorn) return null
+        return moveUnicorn(prevUnicorn, labyrinth.maze, labyrinth.safeRooms, heroPosition)
+      })
+    }, 800) // Slower movement than dragons
+
+    return () => clearInterval(unicornInterval)
+  }, [isGameActive, unicorn, labyrinth.maze, labyrinth.safeRooms, heroPosition, isRespawning])
+
   // Check if unicorn touches dragon - unicorn protects hero!
   useEffect(() => {
-    if (!labyrinth.unicorn || enemies.length === 0) return
+    if (!unicorn || enemies.length === 0) return
 
     const touchedDragonIndex = enemies.findIndex(
-      enemy => enemy.x === labyrinth.unicorn!.x && enemy.y === labyrinth.unicorn!.y
+      enemy => enemy.x === unicorn.x && enemy.y === unicorn.y
     )
 
     if (touchedDragonIndex !== -1) {
       // Unicorn magic! Dragon disappears with sparkles
-      setMagicSparklesPosition(labyrinth.unicorn)
+      setMagicSparklesPosition(unicorn)
       soundSystem.playUnicornMagicSound()
       
       // Remove the dragon
@@ -244,16 +260,16 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
         prevEnemies.filter((_, index) => index !== touchedDragonIndex)
       )
     }
-  }, [enemies, labyrinth.unicorn])
+  }, [enemies, unicorn])
 
   // Check for dragon collision and unicorn touch
   useEffect(() => {
     if (!isGameActive || isRespawning || hasWon) return
 
     // Check if hero touched the unicorn (magical friend!)
-    if (labyrinth.unicorn && 
-        heroPosition.x === labyrinth.unicorn.x && 
-        heroPosition.y === labyrinth.unicorn.y) {
+    if (unicorn && 
+        heroPosition.x === unicorn.x && 
+        heroPosition.y === unicorn.y) {
       setMagicSparklesPosition(heroPosition)
       soundSystem.playUnicornMagicSound()
     }
@@ -267,7 +283,7 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
     if (checkDragonCollision(heroPosition, enemies)) {
       handleDragonCaught()
     }
-  }, [heroPosition, enemies, isGameActive, labyrinth.safeRooms, labyrinth.unicorn, isRespawning, hasWon])
+  }, [heroPosition, enemies, isGameActive, labyrinth.safeRooms, unicorn, isRespawning, hasWon])
 
   const handleDragonCaught = () => {
     setIsRespawning(true)
@@ -356,6 +372,7 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
     setHeroPosition(newLabyrinth.start)
     setLetters(newLabyrinth.letters)
     setEnemies(newLabyrinth.enemies)
+    setUnicorn(newLabyrinth.unicorn)
     setIsGameActive(true)
     setHasWon(false)
     setCompletionTime(0)
@@ -377,6 +394,7 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
     setHeroPosition(newLabyrinth.start)
     setLetters(newLabyrinth.letters)
     setEnemies(newLabyrinth.enemies)
+    setUnicorn(newLabyrinth.unicorn)
     setIsGameActive(true)
     setHasWon(false)
     setCompletionTime(0)
@@ -437,8 +455,8 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
         {enemies.map(enemy => (
           <Dragon key={enemy.id} enemy={enemy} />
         ))}
-        {labyrinth.unicorn && (
-          <Unicorn unicorn={labyrinth.unicorn} />
+        {unicorn && (
+          <Unicorn unicorn={unicorn} />
         )}
         {magicSparklesPosition && (
           <MagicSparkles 
@@ -454,7 +472,7 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
         {!isRespawning && allLettersCollected && "✅ All letters collected! Head to the finish! 🎯"}
         {!isRespawning && heroInSafeRoom && enemies.length > 0 && " 🏠 You're safe here!"}
         {!isRespawning && !heroInSafeRoom && enemies.length > 0 && " 🐉 Watch out for dragons!"}
-        {!isRespawning && labyrinth.unicorn && enemies.length > 0 && " 🦄 Unicorn protects you from dragons!"}
+        {!isRespawning && unicorn && enemies.length > 0 && " 🦄 Unicorn protects you from dragons!"}
       </Instruction>
 
       {showCelebration && hasWon && (
