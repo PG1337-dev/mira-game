@@ -184,7 +184,6 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
   const [letters, setLetters] = useState<Letter[]>(labyrinth.letters)
   const [enemies, setEnemies] = useState<Enemy[]>(labyrinth.enemies)
   const [showCelebration, setShowCelebration] = useState(false)
-  const [hasSeenCelebration, setHasSeenCelebration] = useState(false)
   const [isRespawning, setIsRespawning] = useState(false)
   const [isMusicPlaying, setIsMusicPlaying] = useState(false)
   const [magicSparklesPosition, setMagicSparklesPosition] = useState<Position | null>(null)
@@ -226,6 +225,26 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
       }
     }
   }, [isGameActive, enemies.length, labyrinth.maze, labyrinth.safeRooms, levelConfig.enemySpeed, isRespawning])
+
+  // Check if unicorn touches dragon - unicorn protects hero!
+  useEffect(() => {
+    if (!labyrinth.unicorn || enemies.length === 0) return
+
+    const touchedDragonIndex = enemies.findIndex(
+      enemy => enemy.x === labyrinth.unicorn!.x && enemy.y === labyrinth.unicorn!.y
+    )
+
+    if (touchedDragonIndex !== -1) {
+      // Unicorn magic! Dragon disappears with sparkles
+      setMagicSparklesPosition(labyrinth.unicorn)
+      soundSystem.playUnicornMagicSound()
+      
+      // Remove the dragon
+      setEnemies(prevEnemies => 
+        prevEnemies.filter((_, index) => index !== touchedDragonIndex)
+      )
+    }
+  }, [enemies, labyrinth.unicorn])
 
   // Check for dragon collision and unicorn touch
   useEffect(() => {
@@ -280,38 +299,31 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
       if (newPosition) {
         setHeroPosition(newPosition)
         
-        // Check if player collected a letter
-        const collectedLetter = checkLetterCollection(newPosition, letters)
-        if (collectedLetter) {
-          soundSystem.playCollectSound()
-          setLetters(prevLetters => {
-            const updatedLetters = prevLetters.map(l => 
-              l.x === collectedLetter.x && l.y === collectedLetter.y 
-                ? { ...l, collected: true }
-                : l
-            )
-            
-            // Check if this was the last letter
-            const allCollected = updatedLetters.every(l => l.collected)
-            if (allCollected && !hasSeenCelebration) {
-              soundSystem.playCelebrationMusic() // Play full celebration music!
-              setShowCelebration(true)
-              setIsGameActive(false) // Pause the game
-            }
-            
-            return updatedLetters
-          })
-        }
-        
-        // Check if player reached the finish with all letters collected
-        if (checkWin(newPosition, labyrinth.finish, letters)) {
-          soundSystem.playWinSound()
-          setHasWon(true)
-          setIsGameActive(false)
-        }
+      // Check if player collected a letter
+      const collectedLetter = checkLetterCollection(newPosition, letters)
+      if (collectedLetter) {
+        soundSystem.playCollectSound()
+        setLetters(prevLetters => 
+          prevLetters.map(l => 
+            l.x === collectedLetter.x && l.y === collectedLetter.y 
+              ? { ...l, collected: true }
+              : l
+          )
+        )
+      }
+
+      // Check if player reached the finish with all letters collected
+      if (checkWin(newPosition, labyrinth.finish, letters)) {
+        // Play celebration music and win sound
+        soundSystem.playCelebrationMusic()
+        soundSystem.playWinSound()
+        setShowCelebration(true) // Show celebration modal on win!
+        setHasWon(true)
+        setIsGameActive(false)
+      }
       }
     }
-  }, [heroPosition, labyrinth, isGameActive, hasWon, letters, hasSeenCelebration, isRespawning])
+  }, [heroPosition, labyrinth, isGameActive, hasWon, letters, isRespawning])
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyPress)
@@ -348,7 +360,6 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
     setHasWon(false)
     setCompletionTime(0)
     setShowCelebration(false)
-    setHasSeenCelebration(false)
     setIsRespawning(false)
   }
 
@@ -370,17 +381,13 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
     setHasWon(false)
     setCompletionTime(0)
     setShowCelebration(false)
-    setHasSeenCelebration(false)
     setIsRespawning(false)
   }
 
   const handleCelebrationContinue = () => {
     setShowCelebration(false)
-    setHasSeenCelebration(true)
-    // Restart background music for current level after celebration
-    soundSystem.stopBackgroundMusic()
-    soundSystem.startBackgroundMusic(currentLevel)
-    setIsGameActive(true) // Resume the game
+    // After celebration, show the win modal with stats
+    // (hasWon is already true, so WinModal will show)
   }
 
   const allLettersCollected = canFinish(letters)
@@ -444,17 +451,17 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
       <Instruction>
         {isRespawning && "⚠️ Dragon caught you! Respawning..."}
         {!isRespawning && !allLettersCollected && "Collect all your name letters!"}
-        {!isRespawning && allLettersCollected && "All letters collected! Head to the finish! 🎯"}
+        {!isRespawning && allLettersCollected && "✅ All letters collected! Head to the finish! 🎯"}
         {!isRespawning && heroInSafeRoom && enemies.length > 0 && " 🏠 You're safe here!"}
         {!isRespawning && !heroInSafeRoom && enemies.length > 0 && " 🐉 Watch out for dragons!"}
-        {!isRespawning && labyrinth.unicorn && " 🦄 Find the magical unicorn for a surprise!"}
+        {!isRespawning && labyrinth.unicorn && enemies.length > 0 && " 🦄 Unicorn protects you from dragons!"}
       </Instruction>
 
-      {showCelebration && (
+      {showCelebration && hasWon && (
         <LettersCollectedModal onContinue={handleCelebrationContinue} />
       )}
 
-      {hasWon && (
+      {hasWon && !showCelebration && (
         <WinModal 
           playerName={playerName}
           completionTime={completionTime}
