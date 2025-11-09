@@ -231,9 +231,30 @@ class SoundSystem {
     if (!this.audioContext || this.isMuted) return
 
     const startTime = this.audioContext.currentTime
-    this.playNote(523.25, 0.1, startTime, 0.2) // C5
-    this.playNote(659.25, 0.1, startTime + 0.05, 0.2) // E5
-    this.playNote(783.99, 0.15, startTime + 0.1, 0.2) // G5
+    // Brighter, more noticeable collection sound
+    this.playNote(659.25, 0.12, startTime, 0.35) // E5
+    this.playNote(783.99, 0.12, startTime + 0.08, 0.35) // G5
+    this.playNote(1046.5, 0.15, startTime + 0.16, 0.35) // C6
+  }
+
+  playUnicornMagicSound(): void {
+    if (!this.audioContext || this.isMuted) return
+
+    const startTime = this.audioContext.currentTime
+    // Magical sparkle sound - ascending then descending
+    const notes = [
+      { freq: 523.25, time: 0 },      // C5
+      { freq: 659.25, time: 0.08 },   // E5
+      { freq: 783.99, time: 0.16 },   // G5
+      { freq: 1046.5, time: 0.24 },   // C6
+      { freq: 1318.5, time: 0.32 },   // E6
+      { freq: 1046.5, time: 0.4 },    // C6 - descending
+      { freq: 783.99, time: 0.48 },   // G5
+    ]
+
+    notes.forEach(({ freq, time }) => {
+      this.playNote(freq, 0.1, startTime + time, 0.25)
+    })
   }
 
   playDragonCatchSound(): void {

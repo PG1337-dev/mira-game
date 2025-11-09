@@ -19,6 +19,10 @@ export interface Enemy extends Position {
   speed: number
 }
 
+export interface Unicorn extends Position {
+  id: string
+}
+
 export interface Labyrinth {
   maze: number[][]
   start: Position
@@ -28,6 +32,7 @@ export interface Labyrinth {
   letters: Letter[]
   safeRooms: SafeRoom[]
   enemies: Enemy[]
+  unicorn: Unicorn | null
 }
 
 export type CellType = 'wall' | 'path' | 'start' | 'finish' | 'safeRoom'

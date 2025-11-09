@@ -1,4 +1,4 @@
-import { Labyrinth, Position, Letter, SafeRoom, Enemy } from '../types/game.types'
+import { Labyrinth, Position, Letter, SafeRoom, Enemy, Unicorn } from '../types/game.types'
 
 /**
  * Generates a labyrinth maze using recursive backtracking algorithm
@@ -73,6 +73,9 @@ export function generateLabyrinth(
   // Generate enemies
   const enemies = generateEnemies(maze, enemyCount, start, finish, letters, safeRooms)
   
+  // Generate friendly unicorn (appears from level 2+)
+  const unicorn = generateUnicorn(maze, start, finish, letters, safeRooms, enemies, enemyCount > 0)
+  
   return {
     maze,
     start,
@@ -81,7 +84,8 @@ export function generateLabyrinth(
     height,
     letters,
     safeRooms,
-    enemies
+    enemies,
+    unicorn
   }
 }
 
@@ -217,6 +221,51 @@ function generateEnemies(
   }
   
   return enemies
+}
+
+function generateUnicorn(
+  maze: number[][],
+  start: Position,
+  finish: Position,
+  letters: Letter[],
+  safeRooms: SafeRoom[],
+  enemies: Enemy[],
+  shouldGenerate: boolean
+): Unicorn | null {
+  if (!shouldGenerate) return null // No unicorn in level 1
+  
+  const height = maze.length
+  const width = maze[0].length
+  
+  // Find a nice spot for the unicorn (not too close to start, not at finish/letters/saferooms/enemies)
+  const availablePositions: Position[] = []
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (maze[y][x] === 0 && 
+          !(x === start.x && y === start.y) &&
+          !(x === finish.x && y === finish.y) &&
+          !letters.some(l => l.x === x && l.y === y) &&
+          !safeRooms.some(r => r.x === x && r.y === y) &&
+          !enemies.some(e => e.x === x && e.y === y)) {
+        // Place unicorn in middle areas
+        const distanceFromStart = Math.abs(x - start.x) + Math.abs(y - start.y)
+        if (distanceFromStart > 3 && distanceFromStart < 15) {
+          availablePositions.push({ x, y })
+        }
+      }
+    }
+  }
+  
+  if (availablePositions.length === 0) return null
+  
+  // Pick a random position
+  const randomIndex = Math.floor(Math.random() * availablePositions.length)
+  const position = availablePositions[randomIndex]
+  
+  return {
+    ...position,
+    id: 'magical-unicorn'
+  }
 }
 
 function ensurePathToFinish(maze: number[][], start: Position, finish: Position): void {
