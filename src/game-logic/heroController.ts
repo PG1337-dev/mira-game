@@ -163,11 +163,11 @@ function isValidEnemyMove(x: number, y: number, maze: number[][]): boolean {
 }
 
 export function moveUnicorn(
-  unicorn: Position,
+  unicorn: { x: number; y: number; id: string },
   maze: number[][],
   safeRooms: SafeRoom[],
   heroPosition: Position
-): Position {
+): { x: number; y: number; id: string } {
   // Unicorn moves slowly and randomly
   const directions = [
     { dx: 0, dy: -1 }, // up
@@ -189,7 +189,7 @@ export function moveUnicorn(
         maze[newY][newX] === 0 &&
         !safeRooms.some(room => room.x === newX && room.y === newY) &&
         !(newX === heroPosition.x && newY === heroPosition.y)) {
-      return { x: newX, y: newY }
+      return { x: newX, y: newY, id: unicorn.id }
     }
   }
   
