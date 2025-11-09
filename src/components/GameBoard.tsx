@@ -188,15 +188,16 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
   
   const enemyIntervalRef = useRef<number | null>(null)
 
-  // Start music when component mounts
+  // Start music when component mounts or level changes
   useEffect(() => {
-    soundSystem.startBackgroundMusic()
+    soundSystem.stopBackgroundMusic() // Stop previous level's music
+    soundSystem.startBackgroundMusic(currentLevel) // Start new level's music
     setIsMusicPlaying(true)
     
     return () => {
       soundSystem.stopBackgroundMusic()
     }
-  }, [])
+  }, [currentLevel])
 
   // Enemy movement logic
   useEffect(() => {
@@ -252,7 +253,7 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
   }
 
   const toggleMusic = () => {
-    const muted = soundSystem.toggleMute()
+    const muted = soundSystem.toggleMute(currentLevel)
     setIsMusicPlaying(!muted)
   }
 
@@ -282,7 +283,7 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
             // Check if this was the last letter
             const allCollected = updatedLetters.every(l => l.collected)
             if (allCollected && !hasSeenCelebration) {
-              soundSystem.playCelebrationSound()
+              soundSystem.playCelebrationMusic() // Play full celebration music!
               setShowCelebration(true)
               setIsGameActive(false) // Pause the game
             }
@@ -365,6 +366,9 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
   const handleCelebrationContinue = () => {
     setShowCelebration(false)
     setHasSeenCelebration(true)
+    // Restart background music for current level after celebration
+    soundSystem.stopBackgroundMusic()
+    soundSystem.startBackgroundMusic(currentLevel)
     setIsGameActive(true) // Resume the game
   }
 

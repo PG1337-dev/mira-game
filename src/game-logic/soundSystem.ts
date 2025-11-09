@@ -50,9 +50,8 @@ class SoundSystem {
     oscillator.stop(startTime + duration)
   }
 
-  // Japanese-style 8-bit melody (inspired by classic Nintendo games)
-  // Using pentatonic scale for authentic Japanese sound
-  startBackgroundMusic(): void {
+  // Different melodies for each level (1-10)
+  startBackgroundMusic(level: number = 1): void {
     if (!this.audioContext || this.currentMusicInterval) return
 
     const bpm = 140
@@ -70,38 +69,133 @@ class SoundSystem {
       E5: 659.25,
       G5: 783.99,
       A5: 880.00,
+      C6: 1046.5,
     }
 
-    // Cute Japanese melody pattern
-    const melody: Array<{ note: number; duration: number }> = [
-      // Main theme
-      { note: notes.E5, duration: beatDuration * 0.5 },
-      { note: notes.G5, duration: beatDuration * 0.5 },
-      { note: notes.A5, duration: beatDuration * 1 },
-      { note: notes.G5, duration: beatDuration * 0.5 },
-      { note: notes.E5, duration: beatDuration * 0.5 },
-      { note: notes.C5, duration: beatDuration * 1 },
-      { note: notes.D5, duration: beatDuration * 0.5 },
-      { note: notes.E5, duration: beatDuration * 1.5 },
+    // 10 different melodies - one for each level!
+    const melodies: { [key: number]: Array<{ note: number; duration: number }> } = {
+      // Level 1: Simple and cheerful (tutorial)
+      1: [
+        { note: notes.C5, duration: beatDuration * 1 },
+        { note: notes.E5, duration: beatDuration * 1 },
+        { note: notes.G5, duration: beatDuration * 1 },
+        { note: notes.E5, duration: beatDuration * 1 },
+        { note: notes.C5, duration: beatDuration * 1 },
+        { note: notes.G4, duration: beatDuration * 1 },
+        { note: notes.C5, duration: beatDuration * 2 },
+      ],
       
-      { note: notes.E5, duration: beatDuration * 0.5 },
-      { note: notes.G5, duration: beatDuration * 0.5 },
-      { note: notes.A5, duration: beatDuration * 1 },
-      { note: notes.C5, duration: beatDuration * 0.5 },
-      { note: notes.D5, duration: beatDuration * 0.5 },
-      { note: notes.E5, duration: beatDuration * 2 },
+      // Level 2: Adventure begins!
+      2: [
+        { note: notes.E5, duration: beatDuration * 0.5 },
+        { note: notes.G5, duration: beatDuration * 0.5 },
+        { note: notes.A5, duration: beatDuration * 1 },
+        { note: notes.G5, duration: beatDuration * 0.5 },
+        { note: notes.E5, duration: beatDuration * 0.5 },
+        { note: notes.C5, duration: beatDuration * 1 },
+        { note: notes.D5, duration: beatDuration * 0.5 },
+        { note: notes.E5, duration: beatDuration * 1.5 },
+      ],
       
-      // Variation
-      { note: notes.G5, duration: beatDuration * 0.5 },
-      { note: notes.A5, duration: beatDuration * 0.5 },
-      { note: notes.G5, duration: beatDuration * 0.5 },
-      { note: notes.E5, duration: beatDuration * 0.5 },
-      { note: notes.D5, duration: beatDuration * 1 },
-      { note: notes.C5, duration: beatDuration * 0.5 },
-      { note: notes.D5, duration: beatDuration * 0.5 },
-      { note: notes.E5, duration: beatDuration * 1 },
-      { note: notes.G5, duration: beatDuration * 1 },
-    ]
+      // Level 3: Getting exciting
+      3: [
+        { note: notes.G5, duration: beatDuration * 0.5 },
+        { note: notes.E5, duration: beatDuration * 0.5 },
+        { note: notes.C5, duration: beatDuration * 0.5 },
+        { note: notes.E5, duration: beatDuration * 0.5 },
+        { note: notes.G5, duration: beatDuration * 1 },
+        { note: notes.A5, duration: beatDuration * 1 },
+        { note: notes.G5, duration: beatDuration * 1 },
+        { note: notes.E5, duration: beatDuration * 1 },
+      ],
+      
+      // Level 4: Mysterious
+      4: [
+        { note: notes.A5, duration: beatDuration * 1 },
+        { note: notes.G5, duration: beatDuration * 0.5 },
+        { note: notes.E5, duration: beatDuration * 0.5 },
+        { note: notes.D5, duration: beatDuration * 1 },
+        { note: notes.E5, duration: beatDuration * 1 },
+        { note: notes.G5, duration: beatDuration * 1 },
+        { note: notes.A5, duration: beatDuration * 1 },
+      ],
+      
+      // Level 5: Energetic!
+      5: [
+        { note: notes.E5, duration: beatDuration * 0.25 },
+        { note: notes.G5, duration: beatDuration * 0.25 },
+        { note: notes.A5, duration: beatDuration * 0.5 },
+        { note: notes.G5, duration: beatDuration * 0.25 },
+        { note: notes.A5, duration: beatDuration * 0.25 },
+        { note: notes.C6, duration: beatDuration * 1 },
+        { note: notes.A5, duration: beatDuration * 0.5 },
+        { note: notes.G5, duration: beatDuration * 0.5 },
+        { note: notes.E5, duration: beatDuration * 1 },
+      ],
+      
+      // Level 6: Dreamy
+      6: [
+        { note: notes.C5, duration: beatDuration * 1 },
+        { note: notes.D5, duration: beatDuration * 1 },
+        { note: notes.E5, duration: beatDuration * 1 },
+        { note: notes.G5, duration: beatDuration * 1 },
+        { note: notes.E5, duration: beatDuration * 1 },
+        { note: notes.D5, duration: beatDuration * 1 },
+        { note: notes.C5, duration: beatDuration * 2 },
+      ],
+      
+      // Level 7: Brave and bold
+      7: [
+        { note: notes.G5, duration: beatDuration * 0.5 },
+        { note: notes.A5, duration: beatDuration * 0.5 },
+        { note: notes.C6, duration: beatDuration * 1 },
+        { note: notes.A5, duration: beatDuration * 0.5 },
+        { note: notes.G5, duration: beatDuration * 0.5 },
+        { note: notes.E5, duration: beatDuration * 1 },
+        { note: notes.G5, duration: beatDuration * 1 },
+        { note: notes.C5, duration: beatDuration * 1 },
+      ],
+      
+      // Level 8: Intense!
+      8: [
+        { note: notes.E5, duration: beatDuration * 0.25 },
+        { note: notes.E5, duration: beatDuration * 0.25 },
+        { note: notes.G5, duration: beatDuration * 0.5 },
+        { note: notes.A5, duration: beatDuration * 0.5 },
+        { note: notes.C6, duration: beatDuration * 0.5 },
+        { note: notes.A5, duration: beatDuration * 0.5 },
+        { note: notes.G5, duration: beatDuration * 0.5 },
+        { note: notes.E5, duration: beatDuration * 1 },
+      ],
+      
+      // Level 9: Epic battle
+      9: [
+        { note: notes.A5, duration: beatDuration * 0.5 },
+        { note: notes.G5, duration: beatDuration * 0.5 },
+        { note: notes.E5, duration: beatDuration * 0.5 },
+        { note: notes.G5, duration: beatDuration * 0.5 },
+        { note: notes.A5, duration: beatDuration * 1 },
+        { note: notes.C6, duration: beatDuration * 1 },
+        { note: notes.A5, duration: beatDuration * 1 },
+        { note: notes.G5, duration: beatDuration * 1 },
+      ],
+      
+      // Level 10: Final boss!
+      10: [
+        { note: notes.C6, duration: beatDuration * 0.5 },
+        { note: notes.A5, duration: beatDuration * 0.5 },
+        { note: notes.G5, duration: beatDuration * 0.5 },
+        { note: notes.A5, duration: beatDuration * 0.5 },
+        { note: notes.C6, duration: beatDuration * 1 },
+        { note: notes.G5, duration: beatDuration * 0.5 },
+        { note: notes.E5, duration: beatDuration * 0.5 },
+        { note: notes.C5, duration: beatDuration * 1 },
+        { note: notes.A5, duration: beatDuration * 1 },
+      ],
+    }
+
+    // Get melody for current level (default to level 1 if not found)
+    const melody = melodies[level] || melodies[1]
 
     const playMelody = () => {
       if (!this.audioContext) return
@@ -146,11 +240,11 @@ class SoundSystem {
     if (!this.audioContext || this.isMuted) return
 
     const startTime = this.audioContext.currentTime
-    // Descending notes for "oops" effect
-    this.playNote(440, 0.1, startTime, 0.3)
-    this.playNote(392, 0.1, startTime + 0.1, 0.3)
-    this.playNote(349, 0.1, startTime + 0.2, 0.3)
-    this.playNote(293, 0.2, startTime + 0.3, 0.3)
+    // Sharp "BIP BIP" alarm sound
+    this.playNote(880, 0.08, startTime, 0.4) // A5 - high pitch
+    this.playNote(880, 0.08, startTime + 0.12, 0.4)
+    this.playNote(880, 0.08, startTime + 0.24, 0.4)
+    this.playNote(440, 0.15, startTime + 0.36, 0.35) // A4 - lower
   }
 
   playWinSound(): void {
@@ -168,28 +262,62 @@ class SoundSystem {
     if (!this.audioContext || this.isMuted) return
 
     const startTime = this.audioContext.currentTime
-    // Happy fanfare
+    // Short fanfare for letter collection
     const melody = [
       { freq: 523.25, time: 0 },      // C5
-      { freq: 659.25, time: 0.15 },   // E5
-      { freq: 783.99, time: 0.3 },    // G5
-      { freq: 1046.5, time: 0.45 },   // C6
-      { freq: 783.99, time: 0.6 },    // G5
-      { freq: 1046.5, time: 0.75 },   // C6
+      { freq: 659.25, time: 0.1 },    // E5
+      { freq: 783.99, time: 0.2 },    // G5
+      { freq: 1046.5, time: 0.3 },    // C6
     ]
 
     melody.forEach(({ freq, time }) => {
-      this.playNote(freq, 0.2, startTime + time, 0.3)
+      this.playNote(freq, 0.15, startTime + time, 0.25)
     })
   }
 
-  toggleMute(): boolean {
+  // Full celebration music when all letters are collected!
+  playCelebrationMusic(): void {
+    if (!this.audioContext || this.isMuted) return
+
+    // Stop background music for celebration
+    this.stopBackgroundMusic()
+
+    const startTime = this.audioContext.currentTime
+    const bpm = 160
+    const beat = 60 / bpm
+
+    // Victory fanfare melody
+    const victoryMelody = [
+      // First phrase
+      { freq: 659.25, time: 0, duration: beat * 0.5 },       // E5
+      { freq: 659.25, time: beat * 0.5, duration: beat * 0.5 },
+      { freq: 659.25, time: beat * 1, duration: beat * 1 },
+      { freq: 523.25, time: beat * 2, duration: beat * 0.5 },  // C5
+      { freq: 659.25, time: beat * 2.5, duration: beat * 1 },
+      
+      // Second phrase
+      { freq: 783.99, time: beat * 4, duration: beat * 2 },    // G5
+      { freq: 1046.5, time: beat * 6, duration: beat * 0.5 },  // C6
+      { freq: 1046.5, time: beat * 6.5, duration: beat * 0.5 },
+      { freq: 1046.5, time: beat * 7, duration: beat * 0.5 },
+      { freq: 1174.7, time: beat * 7.5, duration: beat * 0.5 }, // D6
+      { freq: 1046.5, time: beat * 8, duration: beat * 2 },    // C6
+    ]
+
+    victoryMelody.forEach(({ freq, time, duration }) => {
+      this.playNote(freq, duration * 0.9, startTime + time, 0.3)
+    })
+
+    // Note: Background music will be restarted by GameBoard when resuming game
+  }
+
+  toggleMute(currentLevel: number = 1): boolean {
     this.isMuted = !this.isMuted
     
     if (this.isMuted) {
       this.stopBackgroundMusic()
     } else {
-      this.startBackgroundMusic()
+      this.startBackgroundMusic(currentLevel)
     }
     
     return this.isMuted
