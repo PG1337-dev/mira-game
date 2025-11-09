@@ -1,5 +1,5 @@
 import styled, { keyframes, css } from 'styled-components'
-import { Position, Letter } from '../types/game.types'
+import { Position, Letter, SafeRoom } from '../types/game.types'
 
 const pulse = keyframes`
   0%, 100% {
@@ -37,6 +37,7 @@ const Cell = styled.div<{
   isWall: boolean
   isStart: boolean
   isFinish: boolean
+  isSafeRoom: boolean
   canFinish: boolean
 }>`
   width: ${props => props.theme.cellSize}px;
@@ -49,7 +50,7 @@ const Cell = styled.div<{
     box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
   `}
   
-  ${props => !props.isWall && !props.isStart && !props.isFinish && `
+  ${props => !props.isWall && !props.isStart && !props.isFinish && !props.isSafeRoom && `
     background-color: ${props.theme.colors.pathColor};
   `}
   
@@ -58,6 +59,14 @@ const Cell = styled.div<{
     box-shadow: 
       0 0 15px ${props.theme.colors.neonGreen},
       inset 0 0 10px ${props.theme.colors.neonGreen};
+  `}
+  
+  ${props => props.isSafeRoom && `
+    background: radial-gradient(circle, #00ff41, #0a4d0a);
+    box-shadow: 
+      0 0 10px rgba(0, 255, 65, 0.5),
+      inset 0 0 10px rgba(0, 255, 65, 0.3);
+    border: 2px solid #00ff41;
   `}
   
   ${props => props.isFinish && css`
@@ -92,19 +101,40 @@ const LetterOverlay = styled.div<{ collected: boolean }>`
   text-decoration: ${props => props.collected ? 'line-through' : 'none'};
 `
 
+const SafeRoomIcon = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  pointer-events: none;
+  z-index: 4;
+`
+
 interface LabyrinthProps {
   maze: number[][]
   start: Position
   finish: Position
   letters: Letter[]
+  safeRooms: SafeRoom[]
   canFinish: boolean
 }
 
-function Labyrinth({ maze, start, finish, letters, canFinish }: LabyrinthProps) {
+function Labyrinth({ maze, start, finish, letters, safeRooms, canFinish }: LabyrinthProps) {
   // Create a map for quick letter lookup
   const letterMap = new Map<string, Letter>()
   letters.forEach(letter => {
     letterMap.set(`${letter.x},${letter.y}`, letter)
+  })
+
+  // Create a map for safe rooms
+  const safeRoomMap = new Map<string, SafeRoom>()
+  safeRooms.forEach(room => {
+    safeRoomMap.set(`${room.x},${room.y}`, room)
   })
 
   return (
@@ -116,6 +146,7 @@ function Labyrinth({ maze, start, finish, letters, canFinish }: LabyrinthProps) 
             const isFinish = finish.x === colIndex && finish.y === rowIndex
             const isWall = cell === 1
             const letter = letterMap.get(`${colIndex},${rowIndex}`)
+            const isSafeRoom = safeRoomMap.has(`${colIndex},${rowIndex}`)
 
             return (
               <Cell
@@ -123,8 +154,12 @@ function Labyrinth({ maze, start, finish, letters, canFinish }: LabyrinthProps) 
                 isWall={isWall}
                 isStart={isStart}
                 isFinish={isFinish}
+                isSafeRoom={isSafeRoom}
                 canFinish={canFinish}
               >
+                {isSafeRoom && (
+                  <SafeRoomIcon>🏠</SafeRoomIcon>
+                )}
                 {letter && (
                   <LetterOverlay collected={letter.collected}>
                     {letter.char}

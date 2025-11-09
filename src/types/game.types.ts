@@ -8,6 +8,17 @@ export interface Letter extends Position {
   collected: boolean
 }
 
+export interface SafeRoom extends Position {
+  id: string
+}
+
+export interface Enemy extends Position {
+  id: string
+  type: 'dragon'
+  direction: 'up' | 'down' | 'left' | 'right'
+  speed: number
+}
+
 export interface Labyrinth {
   maze: number[][]
   start: Position
@@ -15,9 +26,11 @@ export interface Labyrinth {
   width: number
   height: number
   letters: Letter[]
+  safeRooms: SafeRoom[]
+  enemies: Enemy[]
 }
 
-export type CellType = 'wall' | 'path' | 'start' | 'finish'
+export type CellType = 'wall' | 'path' | 'start' | 'finish' | 'safeRoom'
 
 export interface GameState {
   labyrinth: Labyrinth
@@ -26,5 +39,15 @@ export interface GameState {
   hasWon: boolean
   completionTime: number
   collectedLetters: string[]
+  currentLevel: number
+  lives: number
+}
+
+export interface LevelConfig {
+  level: number
+  mazeSize: number
+  enemyCount: number
+  safeRoomCount: number
+  enemySpeed: number
 }
 

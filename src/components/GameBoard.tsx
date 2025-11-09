@@ -1,13 +1,23 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import styled from 'styled-components'
 import Labyrinth from './Labyrinth'
 import Hero from './Hero'
+import Dragon from './Dragon'
 import Timer from './Timer'
 import WinModal from './WinModal'
 import LettersCollectedModal from './LettersCollectedModal'
 import { generateLabyrinth } from '../game-logic/labyrinthGenerator'
-import { moveHero, checkWin, checkLetterCollection, canFinish } from '../game-logic/heroController'
-import { Labyrinth as LabyrinthType, Letter } from '../types/game.types'
+import { 
+  moveHero, 
+  checkWin, 
+  checkLetterCollection, 
+  canFinish,
+  checkDragonCollision,
+  isInSafeRoom,
+  moveEnemy
+} from '../game-logic/heroController'
+import { getLevelConfig, MAX_LEVEL } from '../game-logic/levelConfig'
+import { Labyrinth as LabyrinthType, Letter, Enemy } from '../types/game.types'
 
 const BoardContainer = styled.div`
   width: 100%;
@@ -17,6 +27,7 @@ const BoardContainer = styled.div`
   align-items: center;
   padding: 20px;
   background: radial-gradient(circle at center, ${props => props.theme.colors.bgSecondary} 0%, ${props => props.theme.colors.bgPrimary} 100%);
+  overflow-y: auto;
 `
 
 const Header = styled.div`
@@ -24,7 +35,7 @@ const Header = styled.div`
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  max-width: 800px;
+  max-width: 1000px;
   margin-bottom: 20px;
   padding: 15px 30px;
   background: rgba(26, 26, 46, 0.7);
@@ -49,6 +60,13 @@ const PlayerName = styled.span`
   font-weight: bold;
   font-size: 20px;
   text-shadow: 0 0 10px ${props => props.theme.colors.neonCyan};
+`
+
+const LevelBadge = styled.div`
+  font-size: 24px;
+  font-weight: bold;
+  color: ${props => props.theme.colors.neonMagenta};
+  text-shadow: ${props => props.theme.shadows.neonMagenta};
 `
 
 const LettersProgress = styled.div`
@@ -100,6 +118,7 @@ const Instruction = styled.div`
   font-size: 16px;
   color: ${props => props.theme.colors.neonOrange};
   text-shadow: ${props => props.theme.shadows.neonOrange};
+  max-width: 600px;
 `
 
 interface GameBoardProps {
@@ -108,19 +127,87 @@ interface GameBoardProps {
 }
 
 function GameBoard({ playerName, onRestart }: GameBoardProps) {
+  const [currentLevel, setCurrentLevel] = useState(1)
+  const levelConfig = getLevelConfig(currentLevel)
+  
   // Generate labyrinth on mount with player's name letters
-  const [labyrinth, setLabyrinth] = useState<LabyrinthType>(() => generateLabyrinth(15, 15, playerName))
+  const [labyrinth, setLabyrinth] = useState<LabyrinthType>(() => 
+    generateLabyrinth(
+      levelConfig.mazeSize, 
+      levelConfig.mazeSize, 
+      playerName,
+      levelConfig.safeRoomCount,
+      levelConfig.enemyCount
+    )
+  )
+  
   const [heroPosition, setHeroPosition] = useState(labyrinth.start)
   const [isGameActive, setIsGameActive] = useState(true)
   const [hasWon, setHasWon] = useState(false)
   const [completionTime, setCompletionTime] = useState(0)
   const [letters, setLetters] = useState<Letter[]>(labyrinth.letters)
+  const [enemies, setEnemies] = useState<Enemy[]>(labyrinth.enemies)
   const [showCelebration, setShowCelebration] = useState(false)
   const [hasSeenCelebration, setHasSeenCelebration] = useState(false)
+  const [isRespawning, setIsRespawning] = useState(false)
+  
+  const enemyIntervalRef = useRef<number | null>(null)
+
+  // Enemy movement logic
+  useEffect(() => {
+    if (!isGameActive || enemies.length === 0 || isRespawning) {
+      if (enemyIntervalRef.current) {
+        clearInterval(enemyIntervalRef.current)
+        enemyIntervalRef.current = null
+      }
+      return
+    }
+
+    enemyIntervalRef.current = setInterval(() => {
+      setEnemies(prevEnemies => 
+        prevEnemies.map(enemy => 
+          moveEnemy(enemy, labyrinth.maze, labyrinth.safeRooms)
+        )
+      )
+    }, levelConfig.enemySpeed)
+
+    return () => {
+      if (enemyIntervalRef.current) {
+        clearInterval(enemyIntervalRef.current)
+      }
+    }
+  }, [isGameActive, enemies.length, labyrinth.maze, labyrinth.safeRooms, levelConfig.enemySpeed, isRespawning])
+
+  // Check for dragon collision
+  useEffect(() => {
+    if (!isGameActive || isRespawning || hasWon) return
+
+    // Check if hero is in a safe room (dragons can't harm here)
+    if (isInSafeRoom(heroPosition, labyrinth.safeRooms)) {
+      return
+    }
+
+    // Check collision with dragons
+    if (checkDragonCollision(heroPosition, enemies)) {
+      handleDragonCaught()
+    }
+  }, [heroPosition, enemies, isGameActive, labyrinth.safeRooms, isRespawning, hasWon])
+
+  const handleDragonCaught = () => {
+    setIsRespawning(true)
+    setIsGameActive(false)
+    
+    // Flash effect or animation here could be added
+    setTimeout(() => {
+      setHeroPosition(labyrinth.start)
+      setIsRespawning(false)
+      setIsGameActive(true)
+    }, 500)
+  }
 
   // Handle keyboard controls
   const handleKeyPress = useCallback((e: KeyboardEvent) => {
-    if (!isGameActive || hasWon) return
+    if (!isGameActive || hasWon || isRespawning) return
 
     const key = e.key
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)) {
@@ -158,7 +245,7 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
         }
       }
     }
-  }, [heroPosition, labyrinth, isGameActive, hasWon, letters, hasSeenCelebration])
+  }, [heroPosition, labyrinth, isGameActive, hasWon, letters, hasSeenCelebration, isRespawning])
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyPress)
@@ -169,17 +256,56 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
     setCompletionTime(time)
   }
 
-  const handlePlayAgain = () => {
-    // Generate new labyrinth with same player name
-    const newLabyrinth = generateLabyrinth(15, 15, playerName)
+  const handleNextLevel = () => {
+    const nextLevel = currentLevel + 1
+    if (nextLevel > MAX_LEVEL) {
+      // Beat the game! Go back to main menu
+      onRestart()
+      return
+    }
+
+    setCurrentLevel(nextLevel)
+    const nextLevelConfig = getLevelConfig(nextLevel)
+    const newLabyrinth = generateLabyrinth(
+      nextLevelConfig.mazeSize,
+      nextLevelConfig.mazeSize,
+      playerName,
+      nextLevelConfig.safeRoomCount,
+      nextLevelConfig.enemyCount
+    )
+    
     setLabyrinth(newLabyrinth)
     setHeroPosition(newLabyrinth.start)
     setLetters(newLabyrinth.letters)
+    setEnemies(newLabyrinth.enemies)
     setIsGameActive(true)
     setHasWon(false)
     setCompletionTime(0)
     setShowCelebration(false)
     setHasSeenCelebration(false)
+    setIsRespawning(false)
+  }
+
+  const handlePlayAgain = () => {
+    // Restart current level
+    const newLabyrinth = generateLabyrinth(
+      levelConfig.mazeSize,
+      levelConfig.mazeSize,
+      playerName,
+      levelConfig.safeRoomCount,
+      levelConfig.enemyCount
+    )
+    
+    setLabyrinth(newLabyrinth)
+    setHeroPosition(newLabyrinth.start)
+    setLetters(newLabyrinth.letters)
+    setEnemies(newLabyrinth.enemies)
+    setIsGameActive(true)
+    setHasWon(false)
+    setCompletionTime(0)
+    setShowCelebration(false)
+    setHasSeenCelebration(false)
+    setIsRespawning(false)
   }
 
   const handleCelebrationContinue = () => {
@@ -190,6 +316,7 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
 
   const allLettersCollected = canFinish(letters)
   const collectedCount = letters.filter(l => l.collected).length
+  const heroInSafeRoom = isInSafeRoom(heroPosition, labyrinth.safeRooms)
 
   return (
     <BoardContainer>
@@ -208,7 +335,8 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
             </LetterDisplay>
           </LettersProgress>
         </PlayerInfo>
-        <Timer isActive={isGameActive} onTimeUpdate={handleTimerUpdate} />
+        <LevelBadge>LEVEL {currentLevel}</LevelBadge>
+        <Timer isActive={isGameActive && !isRespawning} onTimeUpdate={handleTimerUpdate} />
       </Header>
 
       <GameContainer>
@@ -217,15 +345,21 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
           start={labyrinth.start}
           finish={labyrinth.finish}
           letters={letters}
+          safeRooms={labyrinth.safeRooms}
           canFinish={allLettersCollected}
         />
         <Hero position={heroPosition} />
+        {enemies.map(enemy => (
+          <Dragon key={enemy.id} enemy={enemy} />
+        ))}
       </GameContainer>
 
       <Instruction>
-        {!allLettersCollected 
-          ? "Collect all your name letters before going to the finish!"
-          : "All letters collected! Head to the finish! 🎯"}
+        {isRespawning && "⚠️ Dragon caught you! Respawning..."}
+        {!isRespawning && !allLettersCollected && "Collect all your name letters!"}
+        {!isRespawning && allLettersCollected && "All letters collected! Head to the finish! 🎯"}
+        {!isRespawning && heroInSafeRoom && enemies.length > 0 && " 🏠 You're safe here!"}
+        {!isRespawning && !heroInSafeRoom && enemies.length > 0 && " 🐉 Watch out for dragons!"}
       </Instruction>
 
       {showCelebration && (
@@ -239,6 +373,9 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
           lettersCollected={letters.length}
           onPlayAgain={handlePlayAgain}
           onMainMenu={onRestart}
+          onNextLevel={currentLevel < MAX_LEVEL ? handleNextLevel : undefined}
+          currentLevel={currentLevel}
+          maxLevel={MAX_LEVEL}
         />
       )}
     </BoardContainer>

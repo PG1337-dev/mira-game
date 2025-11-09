@@ -163,24 +163,41 @@ interface WinModalProps {
   lettersCollected: number
   onPlayAgain: () => void
   onMainMenu: () => void
+  onNextLevel?: () => void
+  currentLevel?: number
+  maxLevel?: number
 }
 
-function WinModal({ playerName, completionTime, lettersCollected, onPlayAgain, onMainMenu }: WinModalProps) {
+function WinModal({ 
+  playerName, 
+  completionTime, 
+  lettersCollected, 
+  onPlayAgain, 
+  onMainMenu,
+  onNextLevel,
+  currentLevel,
+  maxLevel
+}: WinModalProps) {
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
 
+  const isFinalLevel = currentLevel === maxLevel
+
   return (
     <ModalOverlay>
       <Modal>
         <Content>
-          <Title>YOU WIN!</Title>
+          <Title>{isFinalLevel ? "🎊 GAME COMPLETE! 🎊" : "YOU WIN!"}</Title>
           
           <Message>
             Congratulations, <PlayerHighlight>{playerName}</PlayerHighlight>!<br />
-            You collected all {lettersCollected} letters!
+            {isFinalLevel 
+              ? `You beat all ${maxLevel} levels! Amazing!`
+              : `You completed Level ${currentLevel}! You collected all {lettersCollected} letters!`
+            }
           </Message>
           
           <Stats>
@@ -195,7 +212,12 @@ function WinModal({ playerName, completionTime, lettersCollected, onPlayAgain, o
           </Stats>
 
           <ButtonContainer>
-            <Button primary onClick={onPlayAgain}>
+            {onNextLevel && !isFinalLevel && (
+              <Button primary onClick={onNextLevel}>
+                NEXT LEVEL →
+              </Button>
+            )}
+            <Button primary={isFinalLevel || !onNextLevel} onClick={onPlayAgain}>
               PLAY AGAIN
             </Button>
             <Button onClick={onMainMenu}>

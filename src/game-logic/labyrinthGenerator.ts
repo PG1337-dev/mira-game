@@ -1,12 +1,19 @@
-import { Labyrinth, Position, Letter } from '../types/game.types'
+import { Labyrinth, Position, Letter, SafeRoom, Enemy } from '../types/game.types'
 
 /**
  * Generates a labyrinth maze using recursive backtracking algorithm
  * Creates a maze with guaranteed path from start to finish
  * Scatters letters of the player's name throughout the maze
+ * Adds safe rooms and enemies based on level configuration
  */
 
-export function generateLabyrinth(width: number, height: number, playerName: string): Labyrinth {
+export function generateLabyrinth(
+  width: number, 
+  height: number, 
+  playerName: string,
+  safeRoomCount: number = 0,
+  enemyCount: number = 0
+): Labyrinth {
   // Initialize maze with all walls
   const maze: number[][] = Array(height).fill(null).map(() => Array(width).fill(1))
   
@@ -60,13 +67,21 @@ export function generateLabyrinth(width: number, height: number, playerName: str
   // Generate letter positions from player name
   const letters = generateLetterPositions(maze, playerName, start, finish)
   
+  // Generate safe rooms
+  const safeRooms = generateSafeRooms(maze, safeRoomCount, start, finish, letters)
+  
+  // Generate enemies
+  const enemies = generateEnemies(maze, enemyCount, start, finish, letters, safeRooms)
+  
   return {
     maze,
     start,
     finish,
     width,
     height,
-    letters
+    letters,
+    safeRooms,
+    enemies
   }
 }
 
@@ -113,6 +128,95 @@ function shuffleArray<T>(array: T[]): void {
     const j = Math.floor(Math.random() * (i + 1));
     [array[i], array[j]] = [array[j], array[i]]
   }
+}
+
+function generateSafeRooms(
+  maze: number[][], 
+  count: number, 
+  start: Position, 
+  finish: Position,
+  letters: Letter[]
+): SafeRoom[] {
+  const safeRooms: SafeRoom[] = []
+  const height = maze.length
+  const width = maze[0].length
+  
+  if (count === 0) return safeRooms
+  
+  // Get all available positions (paths, not start/finish/letters)
+  const availablePositions: Position[] = []
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (maze[y][x] === 0 && 
+          !(x === start.x && y === start.y) &&
+          !(x === finish.x && y === finish.y) &&
+          !letters.some(l => l.x === x && l.y === y)) {
+        availablePositions.push({ x, y })
+      }
+    }
+  }
+  
+  // Shuffle and take first N positions
+  shuffleArray(availablePositions)
+  
+  for (let i = 0; i < Math.min(count, availablePositions.length); i++) {
+    safeRooms.push({
+      ...availablePositions[i],
+      id: `safe-${i}`
+    })
+  }
+  
+  return safeRooms
+}
+
+function generateEnemies(
+  maze: number[][], 
+  count: number, 
+  start: Position, 
+  finish: Position,
+  letters: Letter[],
+  safeRooms: SafeRoom[]
+): Enemy[] {
+  const enemies: Enemy[] = []
+  const height = maze.length
+  const width = maze[0].length
+  
+  if (count === 0) return enemies
+  
+  // Get all available positions (paths, not start/finish/letters/safeRooms)
+  const availablePositions: Position[] = []
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (maze[y][x] === 0 && 
+          !(x === start.x && y === start.y) &&
+          !(x === finish.x && y === finish.y) &&
+          !letters.some(l => l.x === x && l.y === y) &&
+          !safeRooms.some(r => r.x === x && r.y === y)) {
+        // Try to place enemies away from start
+        const distanceFromStart = Math.abs(x - start.x) + Math.abs(y - start.y)
+        if (distanceFromStart > 5) {
+          availablePositions.push({ x, y })
+        }
+      }
+    }
+  }
+  
+  // Shuffle and take first N positions
+  shuffleArray(availablePositions)
+  
+  const directions: ('up' | 'down' | 'left' | 'right')[] = ['up', 'down', 'left', 'right']
+  
+  for (let i = 0; i < Math.min(count, availablePositions.length); i++) {
+    enemies.push({
+      ...availablePositions[i],
+      id: `dragon-${i}`,
+      type: 'dragon',
+      direction: directions[Math.floor(Math.random() * directions.length)],
+      speed: 1000
+    })
+  }
+  
+  return enemies
 }
 
 function ensurePathToFinish(maze: number[][], start: Position, finish: Position): void {
