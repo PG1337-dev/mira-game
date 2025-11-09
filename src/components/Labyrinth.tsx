@@ -1,4 +1,4 @@
-import styled, { keyframes } from 'styled-components'
+import styled, { keyframes, css } from 'styled-components'
 import { Position, Letter } from '../types/game.types'
 
 const pulse = keyframes`
@@ -60,14 +60,14 @@ const Cell = styled.div<{
       inset 0 0 10px ${props.theme.colors.neonGreen};
   `}
   
-  ${props => props.isFinish && `
+  ${props => props.isFinish && css`
     background: radial-gradient(
       circle, 
       ${props.canFinish ? props.theme.colors.neonCyan : props.theme.colors.bgSecondary}, 
       ${props.theme.colors.pathColor}
     );
     color: ${props.canFinish ? props.theme.colors.neonCyan : props.theme.colors.textSecondary};
-    animation: ${props.canFinish ? pulse : 'none'} 2s ease-in-out infinite;
+    animation: ${props.canFinish ? css`${pulse} 2s ease-in-out infinite` : 'none'};
     opacity: ${props.canFinish ? 1 : 0.5};
   `}
 `
@@ -85,7 +85,7 @@ const LetterOverlay = styled.div<{ collected: boolean }>`
   font-weight: bold;
   color: ${props => props.collected ? props.theme.colors.textSecondary : props.theme.colors.neonMagenta};
   text-shadow: ${props => !props.collected && props.theme.shadows.neonMagenta};
-  animation: ${props => !props.collected ? letterFloat : 'none'} 2s ease-in-out infinite;
+  animation: ${props => !props.collected ? css`${letterFloat} 2s ease-in-out infinite` : 'none'};
   opacity: ${props => props.collected ? 0.3 : 1};
   pointer-events: none;
   z-index: 5;
