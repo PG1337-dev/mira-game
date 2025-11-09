@@ -4,6 +4,7 @@ import Labyrinth from './Labyrinth'
 import Hero from './Hero'
 import Timer from './Timer'
 import WinModal from './WinModal'
+import LettersCollectedModal from './LettersCollectedModal'
 import { generateLabyrinth } from '../game-logic/labyrinthGenerator'
 import { moveHero, checkWin, checkLetterCollection, canFinish } from '../game-logic/heroController'
 import { Labyrinth as LabyrinthType, Letter } from '../types/game.types'
@@ -114,6 +115,8 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
   const [hasWon, setHasWon] = useState(false)
   const [completionTime, setCompletionTime] = useState(0)
   const [letters, setLetters] = useState<Letter[]>(labyrinth.letters)
+  const [showCelebration, setShowCelebration] = useState(false)
+  const [hasSeenCelebration, setHasSeenCelebration] = useState(false)
 
   // Handle keyboard controls
   const handleKeyPress = useCallback((e: KeyboardEvent) => {
@@ -130,13 +133,22 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
         // Check if player collected a letter
         const collectedLetter = checkLetterCollection(newPosition, letters)
         if (collectedLetter) {
-          setLetters(prevLetters => 
-            prevLetters.map(l => 
+          setLetters(prevLetters => {
+            const updatedLetters = prevLetters.map(l => 
               l.x === collectedLetter.x && l.y === collectedLetter.y 
                 ? { ...l, collected: true }
                 : l
             )
-          )
+            
+            // Check if this was the last letter
+            const allCollected = updatedLetters.every(l => l.collected)
+            if (allCollected && !hasSeenCelebration) {
+              setShowCelebration(true)
+              setIsGameActive(false) // Pause the game
+            }
+            
+            return updatedLetters
+          })
         }
         
         // Check if player reached the finish with all letters collected
@@ -146,7 +158,7 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
         }
       }
     }
-  }, [heroPosition, labyrinth, isGameActive, hasWon, letters])
+  }, [heroPosition, labyrinth, isGameActive, hasWon, letters, hasSeenCelebration])
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyPress)
@@ -166,6 +178,14 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
     setIsGameActive(true)
     setHasWon(false)
     setCompletionTime(0)
+    setShowCelebration(false)
+    setHasSeenCelebration(false)
+  }
+
+  const handleCelebrationContinue = () => {
+    setShowCelebration(false)
+    setHasSeenCelebration(true)
+    setIsGameActive(true) // Resume the game
   }
 
   const allLettersCollected = canFinish(letters)
@@ -207,6 +227,10 @@ function GameBoard({ playerName, onRestart }: GameBoardProps) {
           ? "Collect all your name letters before going to the finish!"
           : "All letters collected! Head to the finish! 🎯"}
       </Instruction>
+
+      {showCelebration && (
+        <LettersCollectedModal onContinue={handleCelebrationContinue} />
+      )}
 
       {hasWon && (
         <WinModal 
