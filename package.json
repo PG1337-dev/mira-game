@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "homepage": "https://pablozzz.github.io/mira-game",
+  "homepage": "https://PG1337-dev.github.io/mira-game",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
