@@ -1,0 +1,18 @@
+.timer {
+  display: flex;
+  gap: 10px;
+  font-size: 20px;
+}
+
+.timer-label {
+  color: var(--text-secondary);
+}
+
+.timer-value {
+  color: var(--neon-orange);
+  font-weight: bold;
+  font-family: 'Courier New', monospace;
+  font-size: 24px;
+  text-shadow: 0 0 10px var(--neon-orange);
+}
+

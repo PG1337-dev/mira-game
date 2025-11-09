@@ -1,0 +1,135 @@
+# Cursor AI Rules for Mira's Labyrinth Game
+
+## Project Context
+This is a 2D arcade labyrinth game built for a 7-year-old child. The game features a retro cartoon style with Blade Runner aesthetics (dark background, neon colors). The hero navigates through a maze using keyboard arrow keys.
+
+## Tech Stack
+- React 18 with Vite
+- React-Konva for 2D canvas rendering
+- Vanilla CSS for styling (no CSS-in-JS)
+- JavaScript (can migrate to TypeScript if needed)
+
+## Code Style & Conventions
+
+### General
+- Write clean, readable code with clear comments
+- Keep functions small and focused
+- Use descriptive variable and function names
+- Prefer functional components and hooks over class components
+
+### React Components
+- Use functional components with hooks
+- Keep components in separate files
+- Props should be documented with comments
+- Use PropTypes or TypeScript for type checking
+- Component file structure:
+  ```jsx
+  import statements
+  
+  // Component logic
+  function ComponentName({ props }) {
+    // hooks
+    // handlers
+    // render
+  }
+  
+  export default ComponentName;
+  ```
+
+### File Organization
+- Components go in `src/components/`
+- Game logic goes in `src/game-logic/`
+- Styles go in `src/styles/`
+- Assets go in `public/assets/`
+- Each major feature should have its own file
+
+### Naming Conventions
+- Components: PascalCase (e.g., `WelcomeScreen.jsx`)
+- Utility functions: camelCase (e.g., `generateLabyrinth.js`)
+- CSS classes: kebab-case (e.g., `.game-board`)
+- Constants: UPPER_SNAKE_CASE (e.g., `MAX_LEVEL`)
+
+### State Management
+- Use React hooks (useState, useEffect, useContext)
+- Keep game state in a central location or context
+- Avoid prop drilling - use Context for global state
+- Local component state for UI-only concerns
+
+### Game Logic
+- Separate game logic from UI components
+- Labyrinth generation should be deterministic or seedable
+- Keep collision detection efficient
+- Game state transitions should be clear and explicit
+
+### Styling
+- Use the Blade Runner color scheme consistently:
+  - Background: `#0a0a0a`
+  - Neon Cyan: `#00f0ff`
+  - Neon Magenta: `#ff00ff`
+  - Neon Orange: `#ff6600`
+  - Walls: `#1a1a2e`
+  - Paths: `#16213e`
+- Mobile-responsive design
+- Use CSS custom properties for theme colors
+- Keep styles modular and component-specific when needed
+
+### Performance
+- Optimize canvas rendering (use React-Konva efficiently)
+- Avoid unnecessary re-renders
+- Use useMemo and useCallback where appropriate
+- Keep game loop efficient (60fps target)
+
+### Kid-Friendly Features
+- Large, easy-to-click buttons
+- Clear visual feedback
+- Simple, intuitive controls
+- Encouraging messages
+- No frustrating mechanics
+- Gradual difficulty progression
+
+### Code Comments
+- Comment complex game logic
+- Explain maze generation algorithms
+- Document collision detection logic
+- Add TODO comments for future features
+
+### Error Handling
+- Graceful error handling
+- No crashes - game should always be playable
+- Console errors should be informative for debugging
+
+### Git Commits
+- Use clear, descriptive commit messages
+- Commit logical chunks of work
+- Format: `feat:`, `fix:`, `refactor:`, `style:`, `docs:`
+
+## Current Development Phase
+- Phase 1: Basic setup and core mechanics
+  - Welcome screen with name input
+  - Simple labyrinth rendering
+  - Hero as CSS square
+  - Arrow key controls
+  - Timer and win condition
+  - Win modal
+
+## Future Considerations
+- Phase 2: Enhanced graphics (sprite images, animations)
+- Phase 3: Multiple levels and progression
+- Phase 4: Sound effects and music
+- Phase 5: Additional features (power-ups, obstacles)
+
+## Testing
+- Test keyboard controls thoroughly
+- Ensure win condition always triggers correctly
+- Verify timer accuracy
+- Test on different screen sizes
+- Kid-test with target audience (7-year-old)
+
+## AI Assistant Guidelines
+- When suggesting code, prefer simple, readable solutions
+- Consider the young target audience in all decisions
+- Maintain the Blade Runner aesthetic in visual changes
+- Keep game mechanics simple and fun
+- Suggest child-appropriate enhancements
+- Prioritize stability and playability over complex features
+
