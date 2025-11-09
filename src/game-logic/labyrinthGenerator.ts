@@ -1,25 +1,25 @@
+import { Labyrinth, Position, Letter } from '../types/game.types'
+
 /**
- * Generates a labyrinth maze using a simplified algorithm
+ * Generates a labyrinth maze using recursive backtracking algorithm
  * Creates a maze with guaranteed path from start to finish
+ * Scatters letters of the player's name throughout the maze
  */
 
-export function generateLabyrinth(width, height) {
+export function generateLabyrinth(width: number, height: number, playerName: string): Labyrinth {
   // Initialize maze with all walls
-  const maze = Array(height).fill(null).map(() => Array(width).fill(1))
-  
-  // Create a simple path-based maze
-  // 0 = path, 1 = wall
+  const maze: number[][] = Array(height).fill(null).map(() => Array(width).fill(1))
   
   // Start position (top-left area)
-  const start = { x: 1, y: 1 }
+  const start: Position = { x: 1, y: 1 }
   
   // Finish position (bottom-right area)
-  const finish = { x: width - 2, y: height - 2 }
+  const finish: Position = { x: width - 2, y: height - 2 }
   
   // Carve out paths using recursive backtracking
-  const visited = Array(height).fill(null).map(() => Array(width).fill(false))
+  const visited: boolean[][] = Array(height).fill(null).map(() => Array(width).fill(false))
   
-  function carve(x, y) {
+  function carve(x: number, y: number): void {
     maze[y][x] = 0
     visited[y][x] = true
     
@@ -57,29 +57,70 @@ export function generateLabyrinth(width, height) {
   // Make sure there's a path to finish
   ensurePathToFinish(maze, start, finish)
   
+  // Generate letter positions from player name
+  const letters = generateLetterPositions(maze, playerName, start, finish)
+  
   return {
     maze,
     start,
     finish,
     width,
-    height
+    height,
+    letters
   }
 }
 
-function shuffleArray(array) {
+function generateLetterPositions(
+  maze: number[][], 
+  playerName: string, 
+  start: Position, 
+  finish: Position
+): Letter[] {
+  const letters: Letter[] = []
+  const height = maze.length
+  const width = maze[0].length
+  
+  // Get all available path positions (excluding start and finish)
+  const availablePositions: Position[] = []
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (maze[y][x] === 0 && 
+          !(x === start.x && y === start.y) && 
+          !(x === finish.x && y === finish.y)) {
+        availablePositions.push({ x, y })
+      }
+    }
+  }
+  
+  // Shuffle available positions
+  shuffleArray(availablePositions)
+  
+  // Place each letter of the name
+  const nameChars = playerName.toUpperCase().split('')
+  for (let i = 0; i < nameChars.length && i < availablePositions.length; i++) {
+    letters.push({
+      ...availablePositions[i],
+      char: nameChars[i],
+      collected: false
+    })
+  }
+  
+  return letters
+}
+
+function shuffleArray<T>(array: T[]): void {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [array[i], array[j]] = [array[j], array[i]]
   }
 }
 
-function ensurePathToFinish(maze, start, finish) {
-  // Simple path finding to ensure connectivity
+function ensurePathToFinish(maze: number[][], start: Position, finish: Position): void {
   const height = maze.length
   const width = maze[0].length
-  const visited = Array(height).fill(null).map(() => Array(width).fill(false))
+  const visited: boolean[][] = Array(height).fill(null).map(() => Array(width).fill(false))
   
-  function canReach(x, y, targetX, targetY) {
+  function canReach(x: number, y: number, targetX: number, targetY: number): boolean {
     if (x === targetX && y === targetY) return true
     if (x < 0 || x >= width || y < 0 || y >= height) return false
     if (maze[y][x] === 1 || visited[y][x]) return false

@@ -1,13 +1,22 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import styled from 'styled-components'
 import WelcomeScreen from './components/WelcomeScreen'
 import GameBoard from './components/GameBoard'
-import './styles/App.css'
+
+const AppContainer = styled.div`
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: ${props => props.theme.colors.bgPrimary};
+`
 
 function App() {
   const [gameStarted, setGameStarted] = useState(false)
   const [playerName, setPlayerName] = useState('')
 
-  const handleStartGame = (name) => {
+  const handleStartGame = (name: string) => {
     setPlayerName(name)
     setGameStarted(true)
   }
@@ -18,13 +27,13 @@ function App() {
   }
 
   return (
-    <div className="app">
+    <AppContainer>
       {!gameStarted ? (
         <WelcomeScreen onStart={handleStartGame} />
       ) : (
         <GameBoard playerName={playerName} onRestart={handleRestart} />
       )}
-    </div>
+    </AppContainer>
   )
 }
 
